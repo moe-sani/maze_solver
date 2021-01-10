@@ -1,11 +1,4 @@
 #!/usr/bin/env python3
-"""
-maze program
-author: Mohammad Fattahi Sani
-email: fattahi.m91@gmail.com
-
-"""
-
 
 import time
 import copy
@@ -16,11 +9,11 @@ from maze_utils import Point, Path, Map
 
 
 def print_lst(lst):
-    temp=[]
+    temp = []
     for item in lst:
         temp.append(item.__str__())
 
-    print(temp)
+    logging.info(temp)
     # print(area(item))
 
 
@@ -35,7 +28,7 @@ def main(mapfile):
     lst_paths = []
     lst_paths.append(init_path)
     loop_end = False
-    counter=0
+    counter = 0
     while loop_end is False:
         for path in lst_paths:
             # print('new step==========')
@@ -79,7 +72,7 @@ def main(mapfile):
 
             time.sleep(0)   # change this to see the steps or debug
 
-        lst_terminated=[]
+        lst_terminated = []
         for i, found_path in enumerate(lst_paths):
             # print('path number:{}'.format(i))
             # found_path.show_history()
@@ -112,8 +105,7 @@ def main(mapfile):
 # Main function
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Maze Solver',
-                                     formatter_class=RawTextHelpFormatter)
+    parser = argparse.ArgumentParser(description='Maze Solver')
 
     parser.add_argument('--debug', default="INFO", choices={"CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"},
                         help="Set the debug level. Standard python levels - ERROR, WARNING, INFO, DEBUG")
@@ -122,8 +114,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.debug, format='%(asctime)s - %(threadName)s:%(module)s:%(levelname)s: %(message)s')
+    logging.basicConfig(level=args.debug, format='%(asctime)s - %(module)s:%(levelname)s: %(message)s')
 
-    logging.info("Welcome to Maze Solver!")
+    print("Welcome to Maze Solver!\n hey hey")
 
     main(args.map)

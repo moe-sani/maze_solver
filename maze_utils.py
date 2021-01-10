@@ -88,25 +88,27 @@ class Map:
         self.p_start = Point()
         self.p_exit = Point()
 
-    def show(self, map):
-        print('map:')
-        for row in map:
+    @staticmethod
+    def show(mymap):
+        map_str = '\nMAP: \n'
+        for row in mymap:
             for element in row:
                 if element == 'X':
-                    print('\33[33m' + 'X' + '\033[0m', end='')
+                    map_str = map_str + ('\33[33m' + 'X' + '\033[0m')
                 if element == 'S':
-                    print('\33[32m' + 'S' + '\033[0m', end='')
+                    map_str = map_str + ('\33[32m' + 'S' + '\033[0m')
                 if element == 'O':
-                    print('O', end='')
+                    map_str = map_str + 'O'
                 if element == '*':
-                    print('\33[31m' + '*' + '\033[0m', end='')
-            print('')
+                    map_str = map_str + ('\33[31m' + '*' + '\033[0m')
+            map_str = map_str + '\n'
+        logging.info(map_str)
 
     def show_path(self, path):
         print('show_path:')
         map_new = copy.deepcopy(self.map)
         for point in path:
-            map_new[point.x][point.y]='*'
+            map_new[point.x][point.y] = '*'
         self.show(map_new)
 
     def __size(self):
@@ -154,14 +156,14 @@ class Map:
                 p.y = self.size.y-1
                 p.x = i
         print('exit is found in: ({},{})'.format(p.x, p.y))
-        self.p_exit=p
+        self.p_exit = p
         return p
 
     def possible_steps(self, p_current):
-        p_down=p_current.return_down()
-        p_up=p_current.return_up()
-        p_left=p_current.return_left()
-        p_right=p_current.return_right()
+        p_down = p_current.return_down()
+        p_up = p_current.return_up()
+        p_left = p_current.return_left()
+        p_right = p_current.return_right()
         lst_foursides = [p_down, p_up, p_right, p_left]
         lst_possible = []
         for p_next in lst_foursides:
