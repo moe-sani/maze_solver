@@ -106,8 +106,6 @@ class Map:
 
     def value(self, point):
         return self.map[point.x][point.y]
-    # print('{} is founded in row:{}, and column:{}'.format(x,p.x,p.y))
-    # indexes are from zero
 
     def find(self, x):
         """
@@ -178,7 +176,7 @@ class Map:
 class Path:
     def __init__(self, _map, _p_current=Point(), history=None):
         """
-
+        class of Path
         :param _map: associated map in Map type
         :param history:
         :param _p_current:
