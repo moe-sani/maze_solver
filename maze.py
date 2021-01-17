@@ -1,92 +1,95 @@
 #!/usr/bin/env python3
-
 import time
-import copy
 import logging
 import argparse
-from argparse import RawTextHelpFormatter
 from maze_utils import Point, Path, Map
 
 
-def main(mapfile):
-    # load a new map from file
-    f = open(mapfile, 'r')
-    map_raw = f.readlines()
-    f.close()
-    logging.debug(map_raw)
-    mymap = Map(map_raw)
-    logging.info('new map is loaded successfully, map size is {}'.format(mymap.size))
-    logging.info(mymap)
-    logging.debug('notation is: (x:row,y:column). starting from zero!')
-    mymap.p_start = mymap.find_start('S')
-    mymap.p_exit = mymap.find_exit('O')
-    logging.info('map start: {},map exit: {}'.format(mymap.p_start, mymap.p_exit))
+class MazeSolver:
+    def __init__(self, mapfile):
+        # load a new map from file
+        f = open(mapfile, 'r')
+        map_raw = f.readlines()
+        f.close()
+        logging.debug(map_raw)
+        self.mymap = Map(map_raw)
+        logging.info('New map is loaded successfully, map size is {}'.format(self.mymap.size))
+        p_start = self.mymap.find_start('S')
+        p_exit = self.mymap.find_exit('O')
+        logging.info('Map start: {},map exit: {}'.format(p_start, p_exit))
+        logging.debug('Notation is: (x:row,y:column). starting from zero!')
+        logging.info(self.mymap)
 
-    init_path = Path(mymap.p_start)
-    lst_paths = [init_path]
+        self.lst_paths = [Path(self.mymap, p_start)]
 
-    # loop until all the possible paths are terminated
-    while False in [path.terminated for path in lst_paths]:
-        for path in lst_paths:
-            logging.debug('new step==========')
-            logging.debug('current path:')
-            logging.debug(path)
-            logging.debug('current point in the path')
-            logging.debug(path.p_current)
+    def run(self):
+        """
+        Loop until all the possible paths are terminated
+        Stores the results internally
+        :return:
+        """
+        while False in [path.terminated for path in self.lst_paths]:
+            for path in self.lst_paths:
+                logging.debug('========== New step ==========')
+                logging.debug('Current path: {}'.format(path))
+                logging.debug('Current point in the path: {}'.format(path.p_current))
+                if path.p_current == self.mymap.p_exit:
+                    logging.debug('This path is successful!')
+                    path.successful = True
+                    path.terminated = True
+                else:
+                    # Find all the possible moves
+                    lst_possible_steps = self.mymap.possible_steps(path.p_current)
+                    lst_possible_steps_unseen = []
+                    temp = []
+                    # Check if we already seen it
+                    for step in lst_possible_steps:
+                        if step not in path.history:
+                            lst_possible_steps_unseen.append(step)
+                            temp.append(step.__str__())
+                    logging.debug('Possible steps at this point are: {}'.format(temp))
 
-            # find all the possible moves
-            lst_possible_steps = mymap.possible_steps(path.p_current)
-            lst_possible_steps_unseen = []
-            for item in lst_possible_steps:
-                # check if we already passed it
-                if item not in path.history:
-                    lst_possible_steps_unseen.append(item)
-
-            if len(lst_possible_steps_unseen) is 0:
-                logging.debug('this path is terminated.')
-                path.terminated = True
-            else:
-                logging.debug('lst_possible_real')
-                logging.debug(lst_possible_steps_unseen)
-                for index, item in enumerate(lst_possible_steps_unseen):
-                    if index is 0:
-                        logging.debug('next step:')
-                        logging.debug(item)
-                        path.p_current = item
+                    if len(lst_possible_steps_unseen) is 0:
+                        logging.debug('This path is terminated.')
+                        path.terminated = True
                     else:
-                        # creating new paths is we have more than one possible way to go
-                        new_path = Path()
-                        new_path.clone(path)
-                        new_path.p_current = item
-                        lst_paths.append(new_path)
-                        logging.debug('new path created!')
-            if path.p_current == mymap.p_exit:
-                logging.debug('this path is finished!')
-                path.finished = True
-                path.terminated = True
+                        # keep one of the points to assign for the current path. we don't wanna assign it now so that
+                        # it wont be copied to new generated paths
+                        p_saved = lst_possible_steps_unseen.pop()
+                        for step in lst_possible_steps_unseen:
+                            # creating new paths as we have more than one possible way to go
+                            new_path = Path(self.mymap, path.p_current, path.history)
+                            # Assign the remaining points to new paths
+                            new_path.p_current = step
+                            self.lst_paths.append(new_path)
+                            logging.debug('New path has been created for : {}'.format(step))
+                        # assign the first point to the current path:
+                        path.p_current = p_saved
+                        logging.debug('next step: {}'.format(path.p_current))
+                time.sleep(0)   # change this to see the steps or debug
 
-            time.sleep(0.5)   # change this to see the steps or debug
+    def show_results(self):
+        lst_successful_paths = []
+        lst_path_sizes = []
+        logging.debug('============ ALL Paths are as follows:')
+        for found_path in self.lst_paths:
+            logging.debug(found_path)
+            logging.debug(found_path.get_map_str())
+            logging.debug('--------')
+            if found_path.successful:
+                lst_successful_paths.append(found_path)
+        logging.info('============ Successful Paths are as follows:')
+        for index, found_path in enumerate(lst_successful_paths):
+            logging.info('path number:{}'.format(index))
+            logging.info(found_path)
+            logging.info(found_path.get_map_str())
+            lst_path_sizes.append(len(found_path.history))
 
-    lst_finished_paths = []
-    lst_path_sizes = []
-    logging.info('============ALL Paths are as follows:')
-    for found_path in lst_paths:
-        logging.info(found_path)
-        logging.info('--------')
-        if found_path.finished:
-            lst_finished_paths.append(found_path)
-    logging.info('============finished Paths are as follows:')
-    for index, found_path in enumerate(lst_finished_paths):
-        logging.info('path number:{}'.format(index))
-        logging.debug(found_path)
-        logging.debug(found_path.get_map_str(mymap.map))
-        lst_path_sizes.append(len(found_path.history))
-
-    logging.info('============shortest path is:')
-    min_index = lst_path_sizes.index(min(lst_path_sizes))
-    path_shortest = lst_finished_paths[min_index]
-    logging.info(path_shortest)
-    logging.info(path_shortest.get_map_str(mymap.map))
+        logging.info('============ Shortest path is:')
+        min_index = lst_path_sizes.index(min(lst_path_sizes))
+        path_shortest = lst_successful_paths[min_index]
+        logging.info(path_shortest)
+        logging.info(path_shortest.get_map_str())
 
 
 # Main function
@@ -105,4 +108,6 @@ if __name__ == '__main__':
 
     logging.info("Welcome to Maze Solver!")
 
-    main(args.map)
+    my_maze_solver = MazeSolver(args.map)
+    my_maze_solver.run()
+    my_maze_solver.show_results()

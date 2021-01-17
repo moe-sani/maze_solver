@@ -1,4 +1,3 @@
-import logging
 import copy
 
 
@@ -15,9 +14,11 @@ def map_to_str(_map):
                 # normal color
                 map_str = map_str + 'O'
             if element == '*':
+                # red color
                 map_str = map_str + ('\33[31m' + '*' + '\033[0m')
             if element == 'A':
-                map_str = map_str + ('\33[30m' + 'A' + '\033[0m')
+                # blue color
+                map_str = map_str + ('\33[34m' + 'A' + '\033[0m')
         map_str = map_str + '\n'
     return map_str
 
@@ -75,57 +76,15 @@ class Point:
         return lst_foursides
 
 
-class Path:
-    def __init__(self, p_start=Point()):
-        self._p_current = p_start
-        self.history = []
-        self.finished = False
-        self.terminated = False
-
-    def __str__(self):
-        temp = []
-        for item in self.history:
-            temp.append(item.__str__())
-        return str(temp)
-
-    @property
-    def p_current(self):
-        return self._p_current
-
-    @p_current.setter
-    def p_current(self, next_point):
-        self.history.append(self.p_current)
-        self._p_current = next_point
-
-    def clone(self, path):
-        self.history = copy.deepcopy(path.history)
-        self._p_current = path.p_current
-
-    # def show_history(self):
-    #     temp = []
-    #     for item in self.history:
-    #         temp.append(item.__str__())
-    #     logging.info('---------')
-    #     logging.info('path history:')
-    #     logging.info(temp)
-    #     logging.info(', finished?:')
-    #     logging.info(self.finished)
-    #     logging.info(', terminated?:')
-    #     logging.info(self.terminated)
-    #     logging.info('---------')
-
-    def get_map_str(self, _map):
-        logging.info('show_path:')
-        map_new = copy.deepcopy(_map)
-        for point in self.history:
-            map_new[point.x][point.y] = '*'
-        map_new[self._p_current.x][self._p_current.y] = 'A'
-        return map_to_str(map_new)
-
-
 class Map:
+    """
+    Map class:
+    you can print this class directly and will print prettified map
+    """
     def __init__(self, map_raw):
-
+        """
+        :param map_raw: raw map loaded from a map file
+        """
         new_map = []
         for line in map_raw:
             temp = list(line)
@@ -133,14 +92,11 @@ class Map:
             new_map.append(temp)
         self.map = new_map
         self.size = self.get_size()
-        self.p_start = Point()
-        self.p_exit = Point()
+        self.p_start = self.find_start('S')
+        self.p_exit = self.find_exit('O')
 
     def __str__(self):
         return map_to_str(self.map)
-
-    # def show(self):
-    #     map_to_str(self.map)
 
     def get_size(self):
         size = Point()
@@ -217,3 +173,42 @@ class Map:
                 if self.value(p_next) is 'O':
                     lst_possible.append(p_next)
         return lst_possible
+
+
+class Path:
+    def __init__(self, _map, _p_current=Point(), history=None):
+        """
+
+        :param _map: associated map in Map type
+        :param history:
+        :param _p_current:
+        """
+        if history is None:
+            history = []
+        self._map = _map.map
+        self._p_current = _p_current
+        self.history = copy.deepcopy(history)
+        self.successful = False
+        self.terminated = False
+
+    def __str__(self):
+        temp = []
+        for item in self.history:
+            temp.append(item.__str__())
+        return str(temp)
+
+    @property
+    def p_current(self):
+        return self._p_current
+
+    @p_current.setter
+    def p_current(self, next_point):
+        self.history.append(self.p_current)
+        self._p_current = next_point
+
+    def get_map_str(self):
+        map_new = copy.deepcopy(self._map)
+        for point in self.history:
+            map_new[point.x][point.y] = '*'
+        map_new[self._p_current.x][self._p_current.y] = 'A'
+        return map_to_str(map_new)
