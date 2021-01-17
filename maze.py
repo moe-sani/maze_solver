@@ -8,98 +8,85 @@ from argparse import RawTextHelpFormatter
 from maze_utils import Point, Path, Map
 
 
-def print_lst(lst):
-    temp = []
-    for item in lst:
-        temp.append(item.__str__())
-
-    logging.info(temp)
-    # print(area(item))
-
-
 def main(mapfile):
     # load a new map from file
-    mymap = Map(mapfile)
+    f = open(mapfile, 'r')
+    map_raw = f.readlines()
+    f.close()
+    logging.debug(map_raw)
+    mymap = Map(map_raw)
+    logging.info('new map is loaded successfully, map size is {}'.format(mymap.size))
+    logging.info(mymap)
+    logging.debug('notation is: (x:row,y:column). starting from zero!')
+    mymap.p_start = mymap.find_start('S')
+    mymap.p_exit = mymap.find_exit('O')
+    logging.info('map start: {},map exit: {}'.format(mymap.p_start, mymap.p_exit))
 
-    mymap.find('S')
-    mymap.find_exit('O')
     init_path = Path(mymap.p_start)
-    init_path.history.append(mymap.p_start)
-    lst_paths = []
-    lst_paths.append(init_path)
-    loop_end = False
-    counter = 0
-    while loop_end is False:
+    lst_paths = [init_path]
+
+    # loop until all the possible paths are terminated
+    while False in [path.terminated for path in lst_paths]:
         for path in lst_paths:
-            # print('new step==========')
-            # print('current path:')
-            # path.show_history()
-            # print('current point in the path')
-            # print(path.p_current)
-            lst_possible = mymap.possible_steps(path.p_current)
-            lst_possible_real = []
-            for item in lst_possible:
+            logging.debug('new step==========')
+            logging.debug('current path:')
+            logging.debug(path)
+            logging.debug('current point in the path')
+            logging.debug(path.p_current)
+
+            # find all the possible moves
+            lst_possible_steps = mymap.possible_steps(path.p_current)
+            lst_possible_steps_unseen = []
+            for item in lst_possible_steps:
                 # check if we already passed it
                 if item not in path.history:
-                    lst_possible_real.append(item)
+                    lst_possible_steps_unseen.append(item)
 
-            if len(lst_possible_real) is 0:
-                # print('this path is terminated.')
+            if len(lst_possible_steps_unseen) is 0:
+                logging.debug('this path is terminated.')
                 path.terminated = True
-
-            # print('lst_possible_real')
-            # print_lst(lst_possible_real)
-            for index, item in enumerate(lst_possible_real):
-                if index is 0:
-                    # print('next step:')
-                    # print(item)
-                    path.p_current = item
-                    path.history.append(path.p_current)
-                else:
-                    temp_path = Path()
-                    temp_path.history = copy.deepcopy(path.history)
-                    temp_path.p_current = item
-                    temp_path.history.pop()
-                    temp_path.history.append(temp_path.p_current)
-                    lst_paths.append(temp_path)
-                    # print('new path created!')
-                    # print('new path history:')
-                    # print_lst(temp_path.history)
+            else:
+                logging.debug('lst_possible_real')
+                logging.debug(lst_possible_steps_unseen)
+                for index, item in enumerate(lst_possible_steps_unseen):
+                    if index is 0:
+                        logging.debug('next step:')
+                        logging.debug(item)
+                        path.p_current = item
+                    else:
+                        # creating new paths is we have more than one possible way to go
+                        new_path = Path()
+                        new_path.clone(path)
+                        new_path.p_current = item
+                        lst_paths.append(new_path)
+                        logging.debug('new path created!')
             if path.p_current == mymap.p_exit:
-                # print('this path is finished!')
+                logging.debug('this path is finished!')
                 path.finished = True
                 path.terminated = True
 
-            time.sleep(0)   # change this to see the steps or debug
-
-        lst_terminated = []
-        for i, found_path in enumerate(lst_paths):
-            # print('path number:{}'.format(i))
-            # found_path.show_history()
-            lst_terminated.append(found_path.terminated)
-            if False not in lst_terminated:
-                loop_end = True
+            time.sleep(0.5)   # change this to see the steps or debug
 
     lst_finished_paths = []
     lst_path_sizes = []
-    mymap.show(mymap.map)
-    # print('============ALL Paths are as follows:')
+    logging.info('============ALL Paths are as follows:')
     for found_path in lst_paths:
-        # found_path.show_history()
-        # print('--------')
+        logging.info(found_path)
+        logging.info('--------')
         if found_path.finished:
             lst_finished_paths.append(found_path)
-    print('============finished Paths are as follows:')
+    logging.info('============finished Paths are as follows:')
     for index, found_path in enumerate(lst_finished_paths):
-        print('path number:{}'.format(index))
-        found_path.show_history()
-        mymap.show_path(found_path.history)
+        logging.info('path number:{}'.format(index))
+        logging.debug(found_path)
+        logging.debug(found_path.get_map_str(mymap.map))
         lst_path_sizes.append(len(found_path.history))
 
-    print('============shortest path is:')
+    logging.info('============shortest path is:')
     min_index = lst_path_sizes.index(min(lst_path_sizes))
-    print(min_index)
-    mymap.show_path(lst_finished_paths[min_index].history)
+    path_shortest = lst_finished_paths[min_index]
+    logging.info(path_shortest)
+    logging.info(path_shortest.get_map_str(mymap.map))
 
 
 # Main function
@@ -114,8 +101,8 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    logging.basicConfig(level=args.debug, format='%(asctime)s - %(module)s:%(levelname)s: %(message)s')
+    logging.basicConfig(level=args.debug, format='> %(levelname)s: %(message)s')
 
-    print("Welcome to Maze Solver!\n hey hey")
+    logging.info("Welcome to Maze Solver!")
 
     main(args.map)
